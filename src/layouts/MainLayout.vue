@@ -5,7 +5,7 @@
         <q-toolbar-title>Flower Shop</q-toolbar-title>
         
         <div v-if="userStore.isAuthenticated">
-          <q-btn v-if="userStore.user.role === 'ADMIN'" flat round icon="admin_panel_settings" to="/admin" color="negative">
+          <q-btn v-if="userStore.isAdmin" flat round icon="admin_panel_settings" to="/admin" color="negative">
             <q-tooltip>관리자 페이지</q-tooltip>
           </q-btn>
           <span class="q-mr-sm text-subtitle2">{{ userStore.user.name }}님</span>
@@ -26,6 +26,7 @@
       <q-tabs no-caps active-color="primary" indicator-color="transparent" class="text-grey">
         <q-route-tab name="home" label="홈" icon="home" to="/" exact />
         <q-route-tab name="cart" label="장바구니" icon="shopping_cart" to="/cart" />
+        <q-route-tab name="my-orders" label="주문내역" icon="list_alt" to="/my-orders" />
       </q-tabs>
     </q-footer>
   </q-layout>

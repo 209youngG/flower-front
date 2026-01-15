@@ -21,7 +21,7 @@ module.exports = configure(function (/* ctx */) {
   return {
     eslint: {
       // fix: true,
-      // include: [],
+      include: ['src/**/*.{js,ts,vue}'],
       // exclude: [],
       // rawOptions: {},
       warnings: true,
@@ -34,7 +34,7 @@ module.exports = configure(function (/* ctx */) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli/boot-files
-    boot: [/* "axios",*/ "main", "errorHandle", "q-draggable-table"],
+    boot: ["axios", "main"],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: ["app.scss"],
@@ -115,6 +115,13 @@ module.exports = configure(function (/* ctx */) {
       // https: true
       port: 9000,
       open: false, // opens browser window automatically
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false
+        }
+      }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

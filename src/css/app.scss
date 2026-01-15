@@ -1,14 +1,1 @@
 // app global css in SCSS form
-/*******************************************************************
-// 위치 : src/css/app.scss
-// 설명 : 각 요소에 적용될 SCSS를 한곳에 모아서 관리함
-********************************************************************/
-
-@import "./reset.scss";
-@import "./common.scss";
-@import "./style.scss";
-// @import "./font/font.scss";
-@import "./font/suite_font/SUITE.css";
-
-@import "./admin.scss";
-@import "./bottomsheet.scss";

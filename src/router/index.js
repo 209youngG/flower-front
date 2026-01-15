@@ -37,14 +37,14 @@ export default route(function (/* { store, ssrContext } */) {
 
   Router.beforeEach(async (to, from, next) => {
     // Admin Guard
-    if (to.path.startsWith('/admin')) {
+    if (to.path.startsWith('/admin') && to.path !== '/admin/login') {
       const userStore = useUserStore()
       if (!userStore.isAuthenticated) {
         Notify.create({ type: 'warning', message: '로그인이 필요합니다.' })
         next('/auth/login')
         return
       }
-      if (userStore.user.role !== 'ADMIN') {
+      if (!userStore.isAdmin) {
         Notify.create({ type: 'negative', message: '관리자 권한이 없습니다.' })
         next('/')
         return

@@ -1,17 +1,20 @@
+/* global naver, wnInterface */
 import { boot } from "quasar/wrappers";
 import { loadScript } from "vue-plugin-load-script";
 
 // import VueGtag from "vue-gtag";
 
-export default boot(({ app }) => {
+export default boot(({ app: _app }) => {
   loadScript(import.meta.env.VITE_NAVER_MAP_URL)
-    .then(async (res) => {
+    .then(async (_res) => {
       // console.log("load script success... ");
-      naver.maps.onJSContentLoaded = () => {
-        // console.log("onJSContentLoaded success... ");
-      };
+      if (typeof naver !== 'undefined') {
+        naver.maps.onJSContentLoaded = () => {
+          // console.log("onJSContentLoaded success... ");
+        };
+      }
     })
-    .catch((err) => {
+    .catch((_err) => {
       // console.log("load script fail ... ");
     });
 
@@ -36,6 +39,10 @@ export default boot(({ app }) => {
     // });
   }
 
+  // [수정] 서비스 워커 수동 등록 로직 주석 처리
+  // 이유: Quasar는 PWA 모드에서 src-pwa/register-service-worker.js를 통해 자동으로 서비스 워커를 관리합니다.
+  // 이곳에서 수동으로 등록하면 SPA 모드(개발 환경)에서 404 에러가 발생하며, PWA 모드에서는 로직이 중복됩니다.
+  /*
   // 서비스 워커 등록
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js').then((registration) => {
@@ -63,15 +70,21 @@ export default boot(({ app }) => {
       checkForServiceWorkerUpdate();
     }, 60 * 1000); // 1분마다 확인
   }
+  */
 });
 
+/*
 // 새로운 서비스 워커 활성화 핸들러
 function handleWaitingServiceWorker(registration) {
   registration.waiting.postMessage({ type: 'SKIP_WAITING' });
 
   registration.waiting.addEventListener('statechange', (event) => {
     if (event.target.state === 'activated') {
-      wnInterface.reload(); // 페이지 새로고침
+      if (typeof wnInterface !== 'undefined') {
+        wnInterface.reload(); // 페이지 새로고침
+      } else {
+        window.location.reload();
+      }
     }
   });
 }
@@ -87,3 +100,5 @@ function checkForServiceWorkerUpdate() {
     console.error('서비스 워커 갱신 확인 중 오류:', error);
   });
 }
+*/
+
