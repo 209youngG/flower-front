@@ -79,6 +79,7 @@
       </q-card>
     </q-dialog>
 
+    <CheckoutDialog v-model="showCheckoutDialog" @confirm="confirmDirectOrder" />
     <PaymentDialog v-model="showPaymentDialog" :orderId="currentOrderId" @completed="onPaymentCompleted" />
   </q-page>
 </template>
@@ -178,18 +179,37 @@ const handleDirectOrder = async (product) => {
   }
 }
 
+import CheckoutDialog from 'components/CheckoutDialog.vue'
+
+// ...
+
+const showCheckoutDialog = ref(false)
+const pendingOrderData = ref(null) // 주문 대기 데이터 (상품, 수량 등)
+
+// ...
+
 const processDirectOrder = async (product, optionIds) => {
+  // 바로 API를 호출하지 않고 배송지 선택 다이얼로그를 띄움
+  pendingOrderData.value = {
+    productId: product.id,
+    quantity: product.uiQuantity,
+    optionIds: optionIds
+  }
+  showCheckoutDialog.value = true
+}
+
+const confirmDirectOrder = async (deliveryInfo) => {
+  showCheckoutDialog.value = false
+  if (!pendingOrderData.value) return
+
   try {
     const res = await createDirectOrder({
       memberId: userStore.memberId,
-      productId: product.id,
-      quantity: product.uiQuantity,
-      optionIds: optionIds, // 추가된 필드
+      productId: pendingOrderData.value.productId,
+      quantity: pendingOrderData.value.quantity,
+      optionIds: pendingOrderData.value.optionIds,
       deliveryMethod: 'SHIPPING',
-      deliveryAddress: '서울시 강남구 테헤란로 (빠른주문)',
-      deliveryPhone: '010-1234-5678',
-      deliveryName: userStore.user?.name || '홍길동',
-      deliveryNote: '문 앞에 부탁드려요'
+      ...deliveryInfo // 주소 정보 병합
     })
     
     currentOrderId.value = res.data.id
@@ -201,6 +221,7 @@ const processDirectOrder = async (product, optionIds) => {
 }
 
 const confirmOptions = () => {
+// ...
   const { product, actionType, selectedOptionIds } = optionDialog.value
   if (actionType === 'CART') {
     processAddToCart(product, selectedOptionIds)

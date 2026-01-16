@@ -28,6 +28,13 @@
           </q-item-section>
           <q-item-section>상품 관리</q-item-section>
         </q-item>
+
+        <q-item clickable v-ripple to="/admin/deliveries" active-class="text-primary bg-blue-1">
+          <q-item-section avatar>
+            <q-icon name="local_shipping" />
+          </q-item-section>
+          <q-item-section>배송 관리</q-item-section>
+        </q-item>
         
         <q-separator class="q-my-md" />
         

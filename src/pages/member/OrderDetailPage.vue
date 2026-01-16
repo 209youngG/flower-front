@@ -42,6 +42,18 @@
             <div>{{ order.deliveryAddress }}</div>
             <div class="text-caption text-grey">{{ order.deliveryNote }}</div>
           </div>
+          
+          <div v-if="deliveryInfo" class="q-mt-md bg-grey-2 q-pa-sm rounded-borders">
+            <div class="text-subtitle2">배송 현황</div>
+            <div class="row q-mt-xs">
+              <div class="col-4">상태</div>
+              <div class="col-8 text-primary text-weight-bold">{{ getStatusLabel(deliveryInfo.status) }}</div>
+            </div>
+            <div v-if="deliveryInfo.trackingNumber" class="row q-mt-xs">
+              <div class="col-4">운송장</div>
+              <div class="col-8">{{ deliveryInfo.courierName }} {{ deliveryInfo.trackingNumber }}</div>
+            </div>
+          </div>
         </q-card-section>
       </q-card>
 
@@ -74,12 +86,14 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrder, cancelOrder } from 'src/api/order'
+import { api } from 'boot/axios' // axios 직접 사용 또는 별도 api 모듈 생성 권장
 import { date, useQuasar } from 'quasar'
 
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
 const order = ref(null)
+const deliveryInfo = ref(null)
 const loading = ref(false)
 
 const loadOrder = async () => {
@@ -87,11 +101,35 @@ const loadOrder = async () => {
   try {
     const res = await getOrder(route.params.id)
     order.value = res.data
+    
+    // 배송 정보 조회 (병렬 처리 가능하지만 순차적으로 진행)
+    await loadDeliveryInfo(order.value.id)
   } catch (e) {
     console.error(e)
   } finally {
     loading.value = false
   }
+}
+
+const loadDeliveryInfo = async (orderId) => {
+  try {
+    const res = await api.get('/api/v1/deliveries', { params: { orderId } })
+    deliveryInfo.value = res.data
+  } catch (e) {
+    console.log('배송 정보 없음')
+  }
+}
+
+const getStatusLabel = (status) => {
+  const map = {
+    'PENDING': '배송 준비중',
+    'PREPARING': '상품 준비중',
+    'SHIPPING': '배송중',
+    'READY_FOR_PICKUP': '픽업 대기',
+    'COMPLETED': '배송 완료',
+    'FAILED': '배송 실패'
+  }
+  return map[status] || status
 }
 
 const handleCancel = async () => {
