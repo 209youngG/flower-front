@@ -4,17 +4,20 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/product/ProductListPage.vue') },
-      { path: 'cart', component: () => import('pages/cart/CartPage.vue') },
+      { path: 'cart', component: () => import('pages/cart/CartPage.vue'), meta: { requiresAuth: true } },
       { path: 'auth/login', component: () => import('pages/auth/LoginPage.vue') },
       { path: 'auth/register', component: () => import('pages/auth/RegisterPage.vue') },
-      { path: 'my-orders', component: () => import('pages/member/MyOrderPage.vue') },
-      { path: 'my-orders/:id', component: () => import('pages/member/OrderDetailPage.vue') }
+      { path: 'my-orders', component: () => import('pages/member/MyOrderPage.vue'), meta: { requiresAuth: true } },
+      { path: 'my-orders/:id', component: () => import('pages/member/OrderDetailPage.vue'), meta: { requiresAuth: true } }
     ]
   },
 
   {
     path: '/admin/login',
-    component: () => import('pages/auth/AdminLoginPage.vue')
+    component: () => import('layouts/BlankLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/auth/AdminLoginPage.vue') }
+    ]
   },
   {
     path: '/admin',

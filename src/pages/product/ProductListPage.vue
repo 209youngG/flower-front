@@ -47,6 +47,38 @@
       <q-spinner color="primary" size="3em" />
     </div>
 
+    <!-- 옵션 선택 다이얼로그 -->
+    <q-dialog v-model="optionDialog.show">
+      <q-card style="width: 400px">
+        <q-card-section>
+          <div class="text-h6">{{ optionDialog.product?.name }}</div>
+          <div class="text-subtitle2 text-grey">옵션을 선택해주세요</div>
+        </q-card-section>
+
+        <q-card-section>
+          <!-- 옵션이 있는 경우 -->
+          <div v-if="optionDialog.product?.options && optionDialog.product.options.length > 0">
+            <div v-for="opt in optionDialog.product.options" :key="opt.id" class="q-mb-sm">
+              <q-checkbox 
+                v-model="optionDialog.selectedOptionIds" 
+                :val="opt.id" 
+                :label="`${opt.name}: ${opt.optionValue} (+${opt.priceAdjustment.toLocaleString()}원)`" 
+              />
+            </div>
+          </div>
+          <!-- 옵션이 없는 경우 -->
+          <div v-else class="text-center text-grey q-py-md">
+            선택 가능한 옵션이 없습니다.
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="취소" v-close-popup />
+          <q-btn flat label="확인" color="primary" @click="confirmOptions" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <PaymentDialog v-model="showPaymentDialog" :orderId="currentOrderId" @completed="onPaymentCompleted" />
   </q-page>
 </template>
@@ -68,6 +100,12 @@ const $q = useQuasar()
 
 const showPaymentDialog = ref(false)
 const currentOrderId = ref(0)
+const optionDialog = ref({
+  show: false,
+  product: null,
+  actionType: '', // 'CART' or 'ORDER'
+  selectedOptionIds: []
+})
 
 const loadProducts = async () => {
   loading.value = true
@@ -93,8 +131,29 @@ const handleRestock = async (product) => {
 }
 
 const handleAddToCart = async (product) => {
+  if (!userStore.isAuthenticated) {
+    $q.notify({ type: 'warning', message: '로그인이 필요한 기능입니다.' })
+    return
+  }
+
+  // 옵션이 있으면 다이얼로그 띄우기
+  if (product.options && product.options.length > 0) {
+    optionDialog.value = {
+      show: true,
+      product: product,
+      actionType: 'CART',
+      selectedOptionIds: []
+    }
+  } else {
+    // 옵션 없으면 바로 처리
+    processAddToCart(product, [])
+  }
+}
+
+const processAddToCart = async (product, optionIds) => {
   try {
-    await cartStore.addItem(product.id, product.uiQuantity)
+    // cartStore.addItem이 옵션 ID 리스트를 지원하도록 수정됨
+    await cartStore.addItem(product.id, product.uiQuantity, optionIds)
     $q.notify({ type: 'positive', message: '장바구니에 담았습니다' })
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message || '장바구니 담기 실패' })
@@ -102,11 +161,30 @@ const handleAddToCart = async (product) => {
 }
 
 const handleDirectOrder = async (product) => {
+  if (!userStore.isAuthenticated) {
+    $q.notify({ type: 'warning', message: '로그인이 필요한 기능입니다.' })
+    return
+  }
+
+  if (product.options && product.options.length > 0) {
+    optionDialog.value = {
+      show: true,
+      product: product,
+      actionType: 'ORDER',
+      selectedOptionIds: []
+    }
+  } else {
+    processDirectOrder(product, [])
+  }
+}
+
+const processDirectOrder = async (product, optionIds) => {
   try {
     const res = await createDirectOrder({
       memberId: userStore.memberId,
       productId: product.id,
       quantity: product.uiQuantity,
+      optionIds: optionIds, // 추가된 필드
       deliveryMethod: 'SHIPPING',
       deliveryAddress: '서울시 강남구 테헤란로 (빠른주문)',
       deliveryPhone: '010-1234-5678',
@@ -120,6 +198,16 @@ const handleDirectOrder = async (product) => {
   } catch (e) {
     $q.notify({ type: 'negative', message: '주문 생성 실패' })
   }
+}
+
+const confirmOptions = () => {
+  const { product, actionType, selectedOptionIds } = optionDialog.value
+  if (actionType === 'CART') {
+    processAddToCart(product, selectedOptionIds)
+  } else if (actionType === 'ORDER') {
+    processDirectOrder(product, selectedOptionIds)
+  }
+  optionDialog.value.show = false
 }
 
 const onPaymentCompleted = async () => {

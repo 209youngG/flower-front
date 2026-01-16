@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCart, addToCart, updateCartItem, removeCartItem } from 'src/api/cart'
+import { getCart, addToCart, updateCartItem, removeCartItem, updateCartItemOptions } from 'src/api/cart'
 import { getProducts } from 'src/api/product'
 import { createOrder } from 'src/api/order'
 import { useUserStore } from './user-store'
@@ -51,17 +51,23 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    async addItem(productId, quantity = 1) {
+    async addItem(productId, quantity = 1, optionIds = []) {
       const userStore = useUserStore()
       if (!userStore.isAuthenticated) throw new Error('로그인이 필요합니다.')
 
-      await addToCart(userStore.memberId, productId, quantity)
+      await addToCart(userStore.memberId, productId, quantity, optionIds)
       await this.loadCart()
     },
 
     async updateItem(itemId, quantity) {
       const userStore = useUserStore()
       await updateCartItem(userStore.memberId, itemId, quantity)
+      await this.loadCart()
+    },
+
+    async updateItemOptions(itemId, optionIds) {
+      const userStore = useUserStore()
+      await updateCartItemOptions(userStore.memberId, itemId, optionIds)
       await this.loadCart()
     },
 

@@ -18,14 +18,17 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error)
 })
 
-// Response Interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Unauthorized
       LocalStorage.remove('user')
-      window.location.href = '/auth/login'
+      
+      if (window.location.hash.includes('admin')) {
+        window.location.hash = '#/admin/login' 
+      } else {
+        window.location.hash = '#/auth/login'
+      }
     }
     return Promise.reject(error)
   }

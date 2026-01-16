@@ -36,7 +36,16 @@ export default route(function (/* { store, ssrContext } */) {
   });
 
   Router.beforeEach(async (to, from, next) => {
-    // Admin Guard
+    const userStore = useUserStore()
+    
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+      if (!userStore.isAuthenticated) {
+        Notify.create({ type: 'warning', message: '로그인이 필요한 서비스입니다.' })
+        next('/auth/login')
+        return
+      }
+    }
+
     if (to.path.startsWith('/admin') && to.path !== '/admin/login') {
       const userStore = useUserStore()
       if (!userStore.isAuthenticated) {
