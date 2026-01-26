@@ -26,7 +26,7 @@ const stats = ref({
 onMounted(async () => {
   try {
     const res = await getProducts()
-    stats.value.productCount = res.data.length
+    stats.value.productCount = res.length
   } catch (e) {
     console.error(e)
   }

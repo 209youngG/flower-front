@@ -29,6 +29,13 @@
           <q-item-section>상품 관리</q-item-section>
         </q-item>
 
+        <q-item clickable v-ripple to="/admin/orders" active-class="text-primary bg-blue-1">
+          <q-item-section avatar>
+            <q-icon name="list_alt" />
+          </q-item-section>
+          <q-item-section>주문 관리</q-item-section>
+        </q-item>
+
         <q-item clickable v-ripple to="/admin/deliveries" active-class="text-primary bg-blue-1">
           <q-item-section avatar>
             <q-icon name="local_shipping" />
@@ -68,6 +75,6 @@ const toggleLeftDrawer = () => {
 
 const logout = () => {
   userStore.logout()
-  router.push('/auth/login')
+  router.push('/admin/login')
 }
 </script>

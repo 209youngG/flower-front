@@ -26,6 +26,8 @@ const routes = [
       { path: '', redirect: '/admin/dashboard' },
       { path: 'dashboard', component: () => import('pages/admin/DashboardPage.vue') },
       { path: 'products', component: () => import('pages/admin/ProductManagementPage.vue') },
+      { path: 'orders', component: () => import('pages/admin/OrderManagementPage.vue') },
+      { path: 'orders/:id', component: () => import('pages/admin/OrderDetailPage.vue') },
       { path: 'deliveries', component: () => import('pages/admin/DeliveryPage.vue') }
     ]
   },

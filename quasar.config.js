@@ -21,7 +21,7 @@ module.exports = configure(function (/* ctx */) {
   return {
     eslint: {
       // fix: true,
-      include: ['src/**/*.{js,ts,vue}'],
+      include: ["src/**/*.{js,ts,vue}"],
       // exclude: [],
       // rawOptions: {},
       warnings: true,
@@ -34,7 +34,7 @@ module.exports = configure(function (/* ctx */) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli/boot-files
-    boot: ["axios", "main"],
+    boot: ["axios", "main", "vue-query", "push-notification"],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: ["app.scss"],
@@ -75,14 +75,14 @@ module.exports = configure(function (/* ctx */) {
       // ignorePublicFolder: true,
       // minify: true,
       // polyfillModulePreload: true,
-      distDir: 'dist/spa',
+      distDir: "dist/spa",
 
       // useFilenameHashes: false,
 
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
       env: {
-        CACHE_VERSION : JSON.stringify(buildTimestamp),
+        CACHE_VERSION: JSON.stringify(buildTimestamp),
         ...envConfig.parsed,
       },
       // 파일 경로 alias 설정
@@ -90,7 +90,7 @@ module.exports = configure(function (/* ctx */) {
         common: path.join(__dirname, "/src/common"),
       },
       viteVuePluginOptions: {
-        logLevel: 'debug',
+        logLevel: "debug",
         build: { target: "esnext", minify: false },
       },
       vitePlugins: [
@@ -104,9 +104,7 @@ module.exports = configure(function (/* ctx */) {
             shared: ["vue"],
           },
         ],*/
-        [
-          "vite-plugin-top-level-await"
-        ]
+        ["vite-plugin-top-level-await"],
       ],
     },
 
@@ -116,12 +114,12 @@ module.exports = configure(function (/* ctx */) {
       port: 9000,
       open: false, // opens browser window automatically
       proxy: {
-        '/api': {
-          target: 'http://localhost:8080',
+        "/api": {
+          target: "http://localhost:8081",
           changeOrigin: true,
-          secure: false
-        }
-      }
+          secure: false,
+        },
+      },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
@@ -185,10 +183,10 @@ module.exports = configure(function (/* ctx */) {
 
     // https://v2.quasar.dev/quasar-cli/developing-pwa/configuring-pwa
     pwa: {
-      workboxMode: 'injectManifest', // 커스텀 서비스 워커를 사용
+      workboxMode: "injectManifest", // 커스텀 서비스 워커를 사용
       injectPwaMetaTags: true,
-      swFilename: 'service-worker.js', // 서비스 워커 파일명
-      manifestFilename: 'manifest.json', // PWA 매니페스트 파일명
+      swFilename: "service-worker.js", // 서비스 워커 파일명
+      manifestFilename: "manifest.json", // PWA 매니페스트 파일명
       useFilenameHashes: true,
       // extendGenerateSWOptions (cfg) {}
       // extendInjectManifestOptions (cfg) {},

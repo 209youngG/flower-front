@@ -34,7 +34,7 @@ const $q = useQuasar()
 
 const onSubmit = async () => {
   try {
-    await userStore.login(loginId.value, password.value)
+    await userStore.login({ loginId: loginId.value, password: password.value })
     $q.notify({ type: 'positive', message: '로그인 성공' })
     router.push('/')
   } catch (e) {

@@ -101,6 +101,7 @@ const statusDialog = ref({
 })
 
 const statusOptions = [
+  { label: '배송 대기', value: 'PENDING' },
   { label: '준비중', value: 'PREPARING' },
   { label: '배송중', value: 'SHIPPING' },
   { label: '배송완료', value: 'COMPLETED' },

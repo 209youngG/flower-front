@@ -2,7 +2,7 @@
   <q-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
     <q-card style="width: 500px; max-width: 90vw;">
       <q-card-section>
-        <div class="text-h6">주문 / 배송지 선택</div>
+        <div class="text-h6">배송지 선택</div>
       </q-card-section>
 
       <q-card-section>
@@ -61,7 +61,7 @@
 
       <q-card-actions align="right">
         <q-btn flat label="취소" v-close-popup />
-        <q-btn label="결제하기" color="primary" @click="confirmOrder" :loading="loading" />
+        <q-btn label="결제 진행" color="primary" @click="confirmOrder" :loading="loading" />
       </q-card-actions>
     </q-card>
   </q-dialog>

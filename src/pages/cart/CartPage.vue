@@ -48,11 +48,33 @@
 
     <!-- 옵션 변경 다이얼로그 -->
     <q-dialog v-model="optionDialog.show">
-      <!-- ... (기존 코드) -->
+      <q-card style="width: 400px">
+        <q-card-section>
+          <div class="text-h6">옵션 변경</div>
+        </q-card-section>
+
+        <q-card-section>
+          <div v-if="optionDialog.productOptions.length > 0">
+            <div v-for="opt in optionDialog.productOptions" :key="opt.id" class="q-mb-sm">
+              <q-checkbox 
+                v-model="optionDialog.selectedOptionIds" 
+                :val="opt.id" 
+                :label="`${opt.name}: ${opt.optionValue} (+${opt.priceAdjustment.toLocaleString()}원)`" 
+              />
+            </div>
+          </div>
+          <div v-else class="text-center text-grey">변경 가능한 옵션이 없습니다.</div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="취소" v-close-popup />
+          <q-btn flat label="변경" color="primary" @click="confirmOptionChange" />
+        </q-card-actions>
+      </q-card>
     </q-dialog>
 
-    <CheckoutDialog v-model="showCheckoutDialog" @confirm="processOrder" />
-    <PaymentDialog v-model="showPaymentDialog" :orderId="currentOrderId" @completed="onPaymentCompleted" />
+    <CheckoutDialog v-model="showCheckoutDialog" @confirm="onDeliveryConfirmed" />
+    <PaymentDialog v-model="showPaymentDialog" @pay="handlePayment" />
   </q-page>
 </template>
 
@@ -62,50 +84,122 @@ import { useCartStore } from 'stores/cart-store'
 import { useUserStore } from 'stores/user-store'
 import { useQuasar } from 'quasar'
 import { createOrder } from 'src/api/order'
+import { processPayment } from 'src/api/payment'
 import { getProduct } from 'src/api/product' 
 import PaymentDialog from 'components/PaymentDialog.vue'
-import CheckoutDialog from 'components/CheckoutDialog.vue' // 추가
+import CheckoutDialog from 'components/CheckoutDialog.vue' 
 
 const cartStore = useCartStore()
 const userStore = useUserStore()
 const $q = useQuasar()
 
 const showPaymentDialog = ref(false)
-const showCheckoutDialog = ref(false) // 추가
-const currentOrderId = ref(0)
+const showCheckoutDialog = ref(false)
+const pendingDeliveryInfo = ref(null)
 
-// ... (기존 옵션 관련 코드들)
+const optionDialog = ref({
+  show: false,
+  cartItem: null,
+  productOptions: [],
+  selectedOptionIds: []
+})
+
+const productCache = ref({}) 
+
+onMounted(async () => {
+  await cartStore.loadCart()
+  if (cartStore.items.length > 0) {
+    const productIds = [...new Set(cartStore.items.map(item => item.productId))]
+    await Promise.all(productIds.map(loadProductInfo))
+  }
+})
+
+const loadProductInfo = async (productId) => {
+  if (productCache.value[productId]) return
+  try {
+    const res = await getProduct(productId)
+    productCache.value[productId] = res.data
+  } catch (e) {
+    console.error('Failed to load product info', e)
+  }
+}
+
+const getOptionName = (productId, optionId) => {
+  const product = productCache.value[productId]
+  if (!product || !product.options) return 'Unknown Option'
+  const opt = product.options.find(o => o.id === optionId)
+  return opt ? `${opt.name}: ${opt.optionValue}` : 'Unknown Option'
+}
+
+const openOptionDialog = async (item) => {
+  await loadProductInfo(item.productId)
+  const product = productCache.value[item.productId]
+  
+  optionDialog.value = {
+    show: true,
+    cartItem: item,
+    productOptions: product ? product.options : [],
+    selectedOptionIds: item.options.map(o => o.productOptionId)
+  }
+}
+
+const confirmOptionChange = async () => {
+  const { cartItem, selectedOptionIds } = optionDialog.value
+  try {
+    await cartStore.updateItemOptions(cartItem.id, selectedOptionIds)
+    $q.notify({ type: 'positive', message: '옵션이 변경되었습니다.' })
+    optionDialog.value.show = false
+  } catch (e) {
+    $q.notify({ type: 'negative', message: '옵션 변경 실패' })
+  }
+}
+
+const updateQty = (item, change) => {
+  cartStore.updateItem(item.id, item.quantity + change)
+}
 
 const openCheckout = () => {
   if (cartStore.items.length === 0) return
   showCheckoutDialog.value = true
 }
 
-const processOrder = async (deliveryInfo) => {
+// 1. 배송지 선택 후 "결제 진행" 클릭 시 -> 배송 정보 저장 & 결제창 오픈
+const onDeliveryConfirmed = (deliveryInfo) => {
   showCheckoutDialog.value = false
-  $q.loading.show({ message: '주문 중...' })
-  
-  try {
-    const res = await createOrder({
-      memberId: userStore.memberId,
-      deliveryMethod: 'SHIPPING',
-      ...deliveryInfo // CheckoutDialog에서 전달받은 주소 정보
-    })
-    
-    currentOrderId.value = res.data.id
-    showPaymentDialog.value = true
-    
-    await cartStore.loadCart()
-  } catch (e) {
-    $q.notify({ type: 'negative', message: '주문 실패' })
-  } finally {
-    $q.loading.hide()
-  }
+  pendingDeliveryInfo.value = deliveryInfo
+  showPaymentDialog.value = true
 }
 
-// const handleCheckout = ... (삭제 또는 processOrder로 대체)
-
-const onPaymentCompleted = () => {
-  cartStore.loadCart()
+// 2. 결제창에서 "결제하기" 클릭 시 -> 주문 생성 & 결제 처리
+const handlePayment = async (paymentMethod) => {
+  if (!pendingDeliveryInfo.value) return
+  
+  showPaymentDialog.value = false // 일단 닫음 (또는 로딩 표시)
+  $q.loading.show({ message: '결제 처리 중...' })
+  
+  try {
+    // 2-1. 주문 생성
+    const orderRes = await createOrder({
+      memberId: userStore.memberId,
+      deliveryMethod: 'SHIPPING',
+      ...pendingDeliveryInfo.value 
+    })
+    
+    const orderId = orderRes.data.id
+    
+    // 2-2. 결제 승인 요청
+    await processPayment(orderId, paymentMethod)
+    
+    $q.notify({ type: 'positive', message: '주문 및 결제가 완료되었습니다.' })
+    await cartStore.loadCart() // 장바구니 비우기 확인
+    
+  } catch (e) {
+    console.error(e)
+    $q.notify({ type: 'negative', message: '결제 실패: ' + (e.response?.data?.message || '알 수 없는 오류') })
+    // 실패 시 장바구니는 유지됨 (백엔드 로직에 의해)
+  } finally {
+    $q.loading.hide()
+    pendingDeliveryInfo.value = null
+  }
 }
 </script>

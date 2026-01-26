@@ -33,7 +33,7 @@ const $q = useQuasar()
 
 const onSubmit = async () => {
   try {
-    await userStore.login(loginId.value, password.value)
+    await userStore.login({ loginId: loginId.value, password: password.value })
     
     if (!userStore.isAdmin) {
       $q.notify({ type: 'warning', message: '관리자 계정이 아닙니다.' })
