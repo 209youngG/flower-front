@@ -32,6 +32,17 @@ const routes = [
     ]
   },
 
+  {
+    path: '/partner',
+    component: () => import('layouts/PartnerLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/partner/PartnerIndexPage.vue') },
+      { path: 'store', component: () => import('pages/partner/PartnerIndexPage.vue') },
+      { path: 'orders', component: () => import('pages/partner/PartnerIndexPage.vue') },
+      { path: 'flower', component: () => import('pages/partner/PartnerIndexPage.vue') }
+    ]
+  },
+
   // Always leave this as last one,
   // but you can also remove it
   {

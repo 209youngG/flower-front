@@ -125,6 +125,23 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
     framework: {
       config: {
+        brand: {
+          primary: '#1976D2',
+          secondary: '#26A69A',
+          accent: '#9C27B0',
+
+          dark: '#1D1D1D',
+          positive: '#21BA45',
+          negative: '#C10015',
+          info: '#31CCEC',
+          warning: '#F2C037',
+          
+          // Flori Vibe Palette
+          lovely: '#FFB7B2',   // Pastel Pink
+          vivid: '#FF6F61',    // Bright Coral
+          chic: '#2C3E50',     // Dark Slate
+          natural: '#8D6E63'   // Earthy Brown
+        },
         notify: {
           badgeStyle: "opacity: 0",
         },
