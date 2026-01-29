@@ -11,8 +11,64 @@
       </div>
     </div>
 
-    <!-- Category Filter (Dynamic) -->
-    <div class="q-mb-md">
+    <!-- Sticky Filter Bar -->
+    <div
+      class="bg-white q-mb-md shadow-1 rounded-borders"
+      style="position: sticky; top: 10px; z-index: 100"
+    >
+      <!-- Upper: Chips & Sort -->
+      <div class="row items-center q-pa-sm no-wrap scroll">
+        <q-chip
+          clickable
+          :color="isNearby ? 'primary' : 'grey-2'"
+          :text-color="isNearby ? 'white' : 'black'"
+          icon="near_me"
+          @click="toggleNearby"
+        >
+          내 주변
+        </q-chip>
+        <q-chip
+          clickable
+          :color="isPickup ? 'primary' : 'grey-2'"
+          :text-color="isPickup ? 'white' : 'black'"
+          icon="store"
+          @click="isPickup = !isPickup"
+        >
+          픽업 가능
+        </q-chip>
+        <q-chip
+          clickable
+          :color="isSameDay ? 'primary' : 'grey-2'"
+          :text-color="isSameDay ? 'white' : 'black'"
+          icon="local_shipping"
+          @click="isSameDay = !isSameDay"
+        >
+          당일 배송
+        </q-chip>
+
+        <q-space />
+
+        <q-select
+          v-model="sortBy"
+          :options="sortOptions"
+          dense
+          borderless
+          options-dense
+          emit-value
+          map-options
+          class="text-caption"
+          style="min-width: 100px"
+          behavior="menu"
+        >
+          <template v-slot:selected>
+            <div class="text-primary text-weight-bold">{{ sortOptions.find(o => o.value === sortBy)?.label }}</div>
+          </template>
+        </q-select>
+      </div>
+
+      <q-separator />
+
+      <!-- Lower: Categories -->
       <q-tabs
         v-model="selectedCategory"
         dense
@@ -31,6 +87,11 @@
           :label="cat.label"
         />
       </q-tabs>
+      
+      <!-- Filter Badge (Optional) -->
+      <div v-if="activeFilterCount > 0" class="absolute-top-right q-mt-xs q-mr-xs">
+        <q-badge color="red" floating>{{ activeFilterCount }}</q-badge>
+      </div>
     </div>
 
     <q-infinite-scroll @load="onLoad" :offset="250" ref="infiniteScrollRef">
@@ -195,6 +256,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import {
   useInfiniteQuery,
   useMutation,
@@ -215,6 +277,8 @@ import PaymentDialog from "components/PaymentDialog.vue";
 import CheckoutDialog from "components/CheckoutDialog.vue";
 import { useCartStore as useRealCartStore } from "stores/cart-store";
 
+const route = useRoute();
+const router = useRouter();
 const cartStore = useRealCartStore();
 const userStore = useUserStore();
 const systemStore = useSystemStore();
@@ -222,19 +286,130 @@ const $q = useQuasar();
 const queryClient = useQueryClient();
 
 const infiniteScrollRef = ref(null);
-const selectedCategory = ref("ALL");
+
+// --- Filter State ---
+const selectedCategory = ref((route.query.category as string) || "ALL");
+const sortBy = ref((route.query.sort as string) || "popular");
+const isNearby = ref(route.query.nearby === "true");
+const isPickup = ref(route.query.pickup === "true");
+const isSameDay = ref(route.query.sameday === "true");
+const userLocation = ref<{ lat: number; lon: number } | null>(null);
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (isNearby.value) count++;
+  if (isPickup.value) count++;
+  if (isSameDay.value) count++;
+  return count;
+});
+
+const sortOptions = [
+  { label: "인기순", value: "popular" },
+  { label: "낮은 가격순", value: "price_asc" },
+  { label: "높은 가격순", value: "price_desc" },
+  { label: "최신순", value: "newest" },
+];
+
+const getSortParam = (val: string) => {
+  switch (val) {
+    case "price_asc":
+      return ["price,asc"];
+    case "price_desc":
+      return ["price,desc"];
+    case "newest":
+      return ["createdAt,desc"];
+    case "popular":
+    default:
+      return ["reviewCount,desc"];
+  }
+};
+
+// --- Sync with URL ---
+const updateUrl = () => {
+  router.replace({
+    query: {
+      ...route.query,
+      category: selectedCategory.value !== "ALL" ? selectedCategory.value : undefined,
+      sort: sortBy.value,
+      nearby: isNearby.value ? "true" : undefined,
+      pickup: isPickup.value ? "true" : undefined,
+      sameday: isSameDay.value ? "true" : undefined,
+    },
+  });
+};
+
+watch(
+  [selectedCategory, sortBy, isNearby, isPickup, isSameDay],
+  () => {
+    updateUrl();
+    if (infiniteScrollRef.value) {
+      (infiniteScrollRef.value as any).resume();
+    }
+  }
+);
+
+// --- Geolocation ---
+const toggleNearby = () => {
+  if (isNearby.value) {
+    isNearby.value = false;
+    userLocation.value = null;
+    return;
+  }
+
+  if (!("geolocation" in navigator)) {
+    $q.notify({
+      type: "warning",
+      message: "브라우저가 위치 정보를 지원하지 않습니다.",
+    });
+    return;
+  }
+
+  $q.loading.show({ message: "위치 정보를 가져오는 중..." });
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      userLocation.value = {
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+      };
+      isNearby.value = true;
+      $q.loading.hide();
+    },
+    (err) => {
+      console.error(err);
+      $q.notify({
+        type: "negative",
+        message: "위치 정보를 가져올 수 없습니다. 권한을 확인해주세요.",
+      });
+      isNearby.value = false;
+      $q.loading.hide();
+    }
+  );
+};
 
 // --- Infinite Query ---
 const { data, fetchNextPage, hasNextPage, isLoading, refetch } =
   useInfiniteQuery({
-    queryKey: ["products", "infinite", selectedCategory], // Add category to key
+    queryKey: [
+      "products",
+      "infinite",
+      selectedCategory,
+      sortBy,
+      isNearby,
+      isPickup,
+      isSameDay,
+      userLocation,
+    ],
     queryFn: ({ pageParam = 0 }) =>
       getProductsPaged({
         page: pageParam as number,
         size: 10,
-        // Pass categoryId only if not ALL
         categoryId:
           selectedCategory.value === "ALL" ? undefined : selectedCategory.value,
+        sort: getSortParam(sortBy.value),
+        deliveryType: isPickup.value ? "PICKUP" : undefined,
+        isAvailableToday: isSameDay.value ? true : undefined,
+        lat: userLocation.value?.lat,
+        lon: userLocation.value?.lon,
       }),
     getNextPageParam: (lastPage) => {
       return lastPage.last ? undefined : lastPage.number + 1;

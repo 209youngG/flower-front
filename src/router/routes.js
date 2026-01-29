@@ -4,6 +4,8 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/product/ProductListPage.vue') },
+      { path: 'stores', component: () => import('pages/StoreLocatorPage.vue') },
+      { path: 'stores/:storeId', component: () => import('pages/StoreDetailPage.vue') },
       { path: 'cart', component: () => import('pages/cart/CartPage.vue'), meta: { requiresAuth: true } },
       { path: 'auth/login', component: () => import('pages/auth/LoginPage.vue') },
       { path: 'auth/register', component: () => import('pages/auth/RegisterPage.vue') },
@@ -37,6 +39,8 @@ const routes = [
     component: () => import('layouts/PartnerLayout.vue'),
     children: [
       { path: '', component: () => import('pages/partner/PartnerIndexPage.vue') },
+      { path: 'dashboard', component: () => import('pages/partner/PartnerIndexPage.vue') },
+      { path: 'register', component: () => import('pages/partner/StoreRegisterPage.vue') },
       { path: 'store', component: () => import('pages/partner/PartnerIndexPage.vue') },
       { path: 'orders', component: () => import('pages/partner/PartnerIndexPage.vue') },
       { path: 'flower', component: () => import('pages/partner/PartnerIndexPage.vue') }

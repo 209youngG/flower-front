@@ -4,6 +4,10 @@ export interface PageRequest {
   size: number;
   sort?: string[];
   categoryId?: string; // Added filter
+  deliveryType?: string;
+  isAvailableToday?: boolean;
+  lat?: number;
+  lon?: number;
 }
 
 export interface PageResponse<T> {

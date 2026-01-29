@@ -82,6 +82,15 @@ export const getProduct = async (productId: number): Promise<Product> => {
   return ProductSchema.parse(response.data);
 };
 
+export const getProductsByStore = async (storeId: number): Promise<Product[]> => {
+  // Use filter param or specific endpoint depending on backend. 
+  // Assuming filter param for now or a sub-resource.
+  // Ideally: /api/v1/stores/{storeId}/products
+  // Or: /api/v1/products?storeId={storeId}
+  const response = await api.get("/api/v1/products", { params: { storeId } });
+  return z.array(ProductSchema).parse(response.data);
+};
+
 export const getProductOptions = async (
   productId: number
 ): Promise<ProductOption[]> => {
